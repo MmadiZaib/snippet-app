@@ -3,19 +3,40 @@ version: '3'
 services:
 ###> doctrine/doctrine-bundle ###
   database:
-    image: postgres:${POSTGRES_VERSION:-14}-alpine
+    image: mysql:5.7
+    working_dir: /var/www/snippet-app
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+      - MYSQL_USER=dev
+      - MYSQL_PASSWORD=pass
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=snippet_db
+    ports:
+      - "3306:3306"
     volumes:
-      - db-data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - .:/var/www/snippet-app
 
-volumes:
-###> doctrine/doctrine-bundle ###
-  db-data:
-###< doctrine/doctrine-bundle ###
+  php-fpm:
+    build: docker/php
+    working_dir: /var/www/snippet-app
+    volumes:
+      - '.:/var/www/snippet-app'
+    depends_on:
+      - database
+
+  nginx:
+    image: nginx:alpine
+    working_dir: /var/www/snippet-app
+    volumes:
+      - .:/var/www/snippet-app
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - '80:80'
+    depends_on:
+      - php-fpm
+
+  db-admin:
+    image: adminer
+    container_name: dbadmin
+    restart: always
+    ports:
+      - "8081:8080"
