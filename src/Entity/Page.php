@@ -10,9 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
 class Page
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(length: 32)]
+    private ?string $id = null;
 
     #[ORM\Column(length: 255)]
     private ?string $title = null;
@@ -27,7 +26,16 @@ class Page
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
-    public function getId(): ?int
+
+    public function __construct(User $owner)
+    {
+        $this->id = bin2hex(random_bytes(16));
+        $this->createdAt = new \DateTimeImmutable();
+        $this->title = 'Sans titre';
+        $this->owner = $owner;
+    }
+
+    public function getId(): ?string
     {
         return $this->id;
     }
